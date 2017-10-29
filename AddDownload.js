@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Facebook Add Download
 // @namespace    http://tampermonkey.net/
-// @version      0.3
+// @version      0.4
 // @description  Add Download buttom in Facebook
 // @author       linnil1
 // @supportURL   None
@@ -56,56 +56,79 @@
             status = 2;
         }
     }
+    function addGIF(feed) {
+        if ($(feed).find('video[muted]').length === 0) { //GIF
+            var nowVideo = $(feed).find('video');
+            if (!nowVideo.attr('class','myGIF')) {
+                nowVideo.click();
+                nowVideo.addClass('myGIF');
+            }
+            var href = $(feed).find('span > a[rel="noopener nofollow"]');
+            if (!href.length)
+                return ;
+            href = decodeURIComponent(href[0].href);
+            href = href.substr(href.indexOf("http://"), href.indexOf(".gif") + 4 - href.indexOf("http://"));
+            var myButton = jQuery("<a/>",
+                                  {'href'  : href,
+                                   'class' : "myURL",
+                                   'target': "_blank",
+                                   'download': ""});
+            toUI(feed, myButton.append("GIF"));
+            nowVideo.click();
+            console.log("Add GIF");
+            return ;
+        }
+    }
+    function addVideo(feed) {
+        var url;
+        if ($(feed).find('a[rel="theater"]').length)
+            url = $(feed).find('a[rel="theater"]');
+        else if($(feed).find('a[href*="permalink"]').length )
+            url = $(feed).find('a[href*="permalink"]');
+        else if($(feed).find('a[href*="videos"]').length )
+            url = $(feed).find('a[href*="videos"]');
+        else
+            return;
+        if (!url.length)
+            return;
 
+        var myButton = jQuery("<a/>",
+                              {'href'  : url[0].href,
+                               'class' : "myURL",
+                               'target': "_blank"});
+        toUI(feed, myButton.append("URL"));
+        console.log("Add Download URL OK");
+    }
+
+    function addImg(feed) {
+        if ($(feed).find('img').length === 0)
+            return ;
+        var imgs = $(feed).find('.mtm div > img');
+        for (var i=0; i<imgs.length; ++i) {
+            var img = imgs[i];
+            console.log(img);
+            toUI(feed, jQuery("<a/>",
+                              {'href'  : img.src,
+                               'class' : "myURL",
+                               'target': "_blank"}).append("I" + i));
+        }
+        console.log("Add GIF");
+
+    }
     function addButtonInFeed() {
         var feed_all = $(".fbUserStory");
         for (var i=0; i<feed_all.length; ++i) {
             var feed = feed_all[i];
-            if ($(feed).find('.myURL').length > 0 || $(feed).find('video').length === 0)
+            if ($(feed).find('.myURL').length > 0)
                 continue;
             console.log("Add to Feed");
-            if ($(feed).find('video[muted]').length === 0) { //GIF
-                var nowVideo = $(feed).find('video');
-                if (!nowVideo.attr('class','myGIF')) {
-                    nowVideo.click();
-                    nowVideo.addClass('myGIF');
-                }
-                var href = $(feed).find('span > a[rel="noopener nofollow"]');
-                if (!href.length)
-                    continue;
-                href = decodeURIComponent(href[0].href);
-                href = href.substr(href.indexOf("http://"), href.indexOf(".gif") + 4 - href.indexOf("http://"));
-
-                console.log(href);
-                var myButton = jQuery("<a/>",
-                                      {'href'  : href,
-                                       'class' : "myURL",
-                                       'target': "_blank",
-                                       'download': ""});
-                toUI(feed, myButton.append("GIF"));
-                nowVideo.click();
-                console.log("Add GIF");
-                return ;
+            if ($(feed).find('video').length) {
+                addGIF(feed);
+                addVideo(feed);
             }
-
-            var url;
-            if ($(feed).find('a[rel="theater"]').length)
-                url = $(feed).find('a[rel="theater"]');
-            else if($(feed).find('a[href*="permalink"]').length )
-                url = $(feed).find('a[href*="permalink"]');
-            else if($(feed).find('a[href*="videos"]').length )
-                url = $(feed).find('a[href*="videos"]');
-            else
-                continue;
-            if (!url.length)
-                continue;
-
-            var myButton = jQuery("<a/>",
-                                  {'href'  : url[0].href,
-                                   'class' : "myURL",
-                                   'target': "_blank"});
-            toUI(feed, myButton.append("URL"));
-            console.log("Add Download URL OK");
+            else {
+                addImg(feed);
+            }
         }
     }
 
@@ -147,12 +170,12 @@
         for (var i=0; i<videosData.length; ++i) {
             var videoData = videosData[i];
             console.log(videoData);
-            var hd = videoData.hd_src_no_ratelimit || videoData.hd_src;
-            console.log(hd);
-            if (!hd)
+            var dataurl = videoData.hd_src_no_ratelimit || videoData.hd_src || videoData.sd_src_no_ratelimit || videoData.sd_src;
+            console.log(dataurl);
+            if (!dataurl)
                 return;
             toUI(feed, jQuery("<a/>",
-                              {'href'  : hd,
+                              {'href'  : dataurl,
                                'class' : "myVIDEOURL",
                                'target': "_blank",
                                'download': ''}).append("V" + i));
