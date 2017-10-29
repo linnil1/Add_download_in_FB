@@ -18,12 +18,17 @@
 
 (function() {
     'use strict';
-    var mutationObserver = window.MutationObserver || window.WebKitMutationObserver || window.MozMutationObserver;
     var status = 0; // 0 for none, 1 for click, 2 for done
     function newElement(oldele) {
         return jQuery("<"+oldele.tagName+">",{class:oldele.className});
     }
-    function addButton() {
+    function toUI(target, want) {
+        target.parent().parent().parent().append(
+            newElement(target.parent().parent()[0]).append(
+                newElement(target.parent()[0]).append(
+                   want[0])));
+    }
+    function addButtonInTheater() {
         if (document.location.href.indexOf("theater") === -1 || status == 2){
             status = 0;
             return ;
@@ -41,29 +46,57 @@
             status = 1;
         }
         if (status === 1 && $('a[data-action-type="download_photo"]').length) {
-            var myButton = jQuery("<a/>");
-            comment_div.parent().parent().parent().append(
-                newElement(comment_div.parent().parent()[0]).append(
-                    newElement(comment_div.parent()[0]).append(
-                        $('a[data-action-type="download_photo"]')[0])));
+            toUI(comment_div,  $('a[data-action-type="download_photo"]'));
             $(".uiButton")[0].click();
             console.log("MY Facebook Add Download OK");
             status = 2;
         }
     }
 
-    var observer = new mutationObserver(addButton);
+    function addButtonInFeed() {
+        var feed_all = $(".fbUserStory");
+        for (var i=0; i<feed_all.length; ++i) {
+            var feed = feed_all[i];
+            if ($(feed).find('.myURL').length > 0 || $(feed).find('video').length === 0)
+                continue;
+            console.log("Add to Feed");
+
+            var url;
+            if ($(feed).find('a[rel="theater"]').length)
+                url = $(feed).find('a[rel="theater"]');
+            else if($(feed).find('a[href*="permalink"]').length)
+                url = $(feed).find('a[href*="permalink"]');
+            else
+                continue;
+            if (!url.length)
+                continue;
+
+            var comment_div = $(feed).find('a[title]');
+            var myButton = jQuery("<a/>",
+                                  {'href'  : url[0].href,
+                                   'class' : "myURL",
+                                   'target': "_blank"});
+            toUI(comment_div, myButton.append("URL"));
+            console.log("Add Download URL OK");
+        }
+    }
+
+    function addAll(){
+        addButtonInTheater();
+        addButtonInFeed();
+    }
+
+    // main function
+    var mutationObserver = window.MutationObserver || window.WebKitMutationObserver || window.MozMutationObserver;
     if(mutationObserver) {
         var body = document.querySelector('body');
         if(!body) {
             return;
         }
-
-        observer = new mutationObserver(addButton);
+        var observer = new mutationObserver(addAll);
         observer.observe(body, {
             'childList': true,
             'subtree': true
         });
     }
-
 })();
