@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Facebook Add Download
 // @namespace    http://tampermonkey.net/
-// @version      0.2
+// @version      0.3
 // @description  Add Download buttom in Facebook
 // @author       linnil1
 // @supportURL   None
@@ -24,7 +24,7 @@
         return jQuery("<"+oldele.tagName+">",{class:oldele.className});
     }
     function toUI(target, want) {
-        var comment_div = $(target).find('a[title]');
+        var comment_div = $($(target).find('a[title]')[0]);
         comment_div.parent().parent().parent().append(
             newElement(comment_div.parent().parent()[0]).append(
                 newElement(comment_div.parent()[0]).append(
@@ -35,9 +35,12 @@
             status = 0;
             return ;
         }
-        console.log("Go Add");
 
         var buttons = $('.overlayBarButtons');
+        if ($('.stageWrapper').find("video").length)
+            return;
+
+        console.log("Go Add");
         if (buttons.find('a[data-action-type="download_photo"]').length) {
             status = 2;
             return;
@@ -49,7 +52,7 @@
         if (status === 1 && $('a[data-action-type="download_photo"]').length) {
             toUI(buttons,  $('a[data-action-type="download_photo"]'));
             $(".uiButton")[0].click();
-            console.log("MY Facebook Add Download OK");
+            console.log("Add Download OK");
             status = 2;
         }
     }
@@ -61,12 +64,37 @@
             if ($(feed).find('.myURL').length > 0 || $(feed).find('video').length === 0)
                 continue;
             console.log("Add to Feed");
+            if ($(feed).find('video[muted]').length === 0) { //GIF
+                var nowVideo = $(feed).find('video');
+                if (!nowVideo.attr('class','myGIF')) {
+                    nowVideo.click();
+                    nowVideo.addClass('myGIF');
+                }
+                var href = $(feed).find('span > a[rel="noopener nofollow"]');
+                if (!href.length)
+                    continue;
+                href = decodeURIComponent(href[0].href);
+                href = href.substr(href.indexOf("http://"), href.indexOf(".gif") + 4 - href.indexOf("http://"));
+
+                console.log(href);
+                var myButton = jQuery("<a/>",
+                                      {'href'  : href,
+                                       'class' : "myURL",
+                                       'target': "_blank",
+                                       'download': ""});
+                toUI(feed, myButton.append("GIF"));
+                nowVideo.click();
+                console.log("Add GIF");
+                return ;
+            }
 
             var url;
             if ($(feed).find('a[rel="theater"]').length)
                 url = $(feed).find('a[rel="theater"]');
-            else if($(feed).find('a[href*="permalink"]').length)
+            else if($(feed).find('a[href*="permalink"]').length )
                 url = $(feed).find('a[href*="permalink"]');
+            else if($(feed).find('a[href*="videos"]').length )
+                url = $(feed).find('a[href*="videos"]');
             else
                 continue;
             if (!url.length)
@@ -118,6 +146,7 @@
         var videosData = getFBVideos();
         for (var i=0; i<videosData.length; ++i) {
             var videoData = videosData[i];
+            console.log(videoData);
             var hd = videoData.hd_src_no_ratelimit || videoData.hd_src;
             console.log(hd);
             if (!hd)
