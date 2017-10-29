@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Facebook Add Download
 // @namespace    http://tampermonkey.net/
-// @version      0.0
+// @version      0.1
 // @description  Add Download buttom in Facebook
 // @author       linnil1
 // @supportURL   None
