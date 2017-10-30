@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Facebook Add Download
 // @namespace    http://tampermonkey.net/
-// @version      0.5
+// @version      0.6
 // @description  Add Download buttom in Facebook
 // @author       linnil1
 // @supportURL   None
@@ -61,30 +61,32 @@
 
     function addGIF(feed) {
         // the most difference between GIF and video is muted. XDDD
-        if ($(feed).find('video[muted]').lengt) {
-            var nowVideo = $(feed).find('video');
-            if (!nowVideo.attr('class','myGIF')) {
-                nowVideo.click(); // pause to get url
-                nowVideo.addClass('myGIF');
-            }
-            // this may be not robost
-            var href = $(feed).find('span > a[rel="noopener nofollow"]');
+        var nowVideo = $(feed).find('.mtm video');
+        var href;
+        if (!nowVideo.attr('class','myGIF')) {
+            href = $(feed).find('span > a[rel="noopener nofollow"]');
             if (!href.length)
-                return ;
-            href = decodeURIComponent(href[0].href);
-            href = href.substr(href.indexOf("http://"), href.indexOf(".gif") + 4 - href.indexOf("http://"));
-            // add to feed
-            console.log(href);
-            var myButton = jQuery("<a/>",
-                                  {'href'  : href,
-                                   'class' : "myURL",
-                                   'target': "_blank",
-                                   'download': ""});
-            toUI(feed, myButton.append("GIF"));
-            nowVideo.click(); // unpause
-            console.log("Add GIF");
-            return ;
+                nowVideo.click(); // pause to get url
+            nowVideo.addClass('myGIF');
         }
+        // this may be not robost
+        href = $(feed).find('span > a[rel="noopener nofollow"]');
+        if (!href.length)
+            return ;
+        href = decodeURIComponent(href[0].href).substr(6); // remove http in the front
+        var httpIndex = href.indexOf("http");
+        href = href.substr(httpIndex, href.toLowerCase().indexOf(".gif") + 4 - httpIndex);
+        // add to feed
+        console.log(href);
+        var myButton = jQuery("<a/>", {
+            'href'  : href,
+            'class' : "myURL",
+            'target': "_blank",
+            'download': ""});
+        toUI(feed, myButton.append("GIF"));
+        nowVideo.click(); // unpause
+        console.log("Add GIF");
+        return ;
     }
     function addVideo(feed) {
         // find url of video for later used (addDownload)
@@ -110,7 +112,7 @@
     }
 
     function addImg(feed) {
-        if ($(feed).find('img').length === 0)
+        if ($(feed).find('.mtm img').length === 0)
             return ;
         // There may be many image in o feed
         var imgs = $(feed).find('.mtm div > img');
@@ -118,13 +120,14 @@
             var img = imgs[i];
             console.log(img);
             // add to feed
-            toUI(feed, jQuery("<a/>",
-                              {'href'  : img.src,
-                               'class' : "myURL",
-                               'target': "_blank"}).append("I" + i));
+            toUI(feed, jQuery("<a/>", {
+                'href'  : img.src,
+                'class' : "myURL",
+                'target': "_blank",
+                'download': ""}).append("I" + i));
         }
-        console.log("Add GIF");
-
+        if (imgs.length)
+            console.log("Add Img");
     }
     function addButtonInFeed() {
         var feed_all = $(".fbUserStory");
@@ -134,9 +137,11 @@
                 continue;
             console.log("Add Feed");
             // there may not have video and image together?
-            if ($(feed).find('video').length) {
-                addGIF(feed);
-                addVideo(feed);
+            if ($(feed).find('.mtm video').length) {
+                if ($(feed).find('.mtm video[muted]').length)
+                    addVideo(feed);
+                else
+                    addGIF(feed);
             }
             else {
                 addImg(feed);
@@ -193,10 +198,59 @@
             console.log("Download video src OK");
         }
     }
+    function addButtonInComment() {
+        var coms = $(".UFIComment");
+        for (var i=0; i<coms.length; ++i) {
+            var com = $(coms[i]);
+            if (com.find(".myURL_comment").length)
+                continue;
+            var link = "";
+
+            if (com.find(".UFICommentContent video").length) { // gif
+                var nowVideo = $(com).find('.UFICommentContent video');
+                var href;
+                if (!nowVideo.attr('class','myGIF')) {
+                    href = $(com).find('span > a[rel="noopener nofollow"]');
+                    if (!href.length)
+                        nowVideo.click(); // pause to get url
+                    nowVideo.addClass('myGIF');
+                }
+                // this may be not robost
+                href = $(com).find('span > a[rel="noopener nofollow"]');
+                if (!href.length)
+                    return ;
+                href = decodeURIComponent(href[0].href).substr(6); // remove http in the front
+                var httpIndex = href.indexOf("http");
+                href = href.substr(httpIndex, href.toLowerCase().indexOf(".gif") + 4 - httpIndex);
+                console.log(href);
+                link = href;
+            }
+            else if (com.find(".UFICommentContent img").length) { // image
+                var img = com.find(".UFICommentContent img");
+                if (!img.length)
+                    continue;
+                link = img[0].src;
+                console.log(img);
+
+            }
+            else
+                continue;
+
+            console.log("Add comment");
+            var but = com.find(".UFIReplyLink");
+            but.parent().append(jQuery('<a/>', {
+                'class': "myURL_comment",
+                'href': link,
+                'target': "_blank",
+                'download': ''}).append("Download")[0]);
+            console.log("Add comment OK");
+        }
+    }
 
     function addAll(){
         addButtonInTheater();
         addButtonInFeed();
+        addButtonInComment();
         addDownload();
     }
 
