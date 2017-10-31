@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Facebook Add Download
 // @namespace    http://tampermonkey.net/
-// @version      0.6.1
+// @version      0.6.2
 // @description  Add Download buttom in Facebook
 // @author       linnil1
 // @supportURL   None
@@ -204,8 +204,8 @@
             if (com.find(".myURL_comment").length)
                 continue;
             var link = "";
-
-            if (com.find(".UFICommentContent video").length) { // gif
+            // gif
+            if (com.find(".UFICommentContent video").length) {
                 var nowVideo = $(com).find('.UFICommentContent video');
                 var href;
                 if (!nowVideo.attr('class','myGIF')) {
@@ -224,13 +224,19 @@
                 console.log(href);
                 link = href;
             }
-            else if (com.find(".UFICommentContent img").length) { // image
+            // image
+            else if (com.find(".UFICommentContent img").length) {
                 var img = com.find(".UFICommentContent img");
-                if (!img.length)
-                    continue;
-                link = img[0].src;
                 console.log(img);
-
+                link = "";
+                // remove emoji
+                for (var i=0; i<img.length; ++i)
+                    if(img[i].src.indexOf("emoji.php") === -1) {
+                        link = img[i].src;
+                        break;
+                    }
+                if (link === "")
+                    return;
             }
             else
                 continue;
