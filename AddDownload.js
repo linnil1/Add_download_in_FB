@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Facebook Add Download
 // @namespace    http://tampermonkey.net/
-// @version      0.6
+// @version      0.6.1
 // @description  Add Download buttom in Facebook
 // @author       linnil1
 // @supportURL   None
@@ -25,7 +25,6 @@
     function toUI(target, want) {
         // find comment and copy one with wanted link
         var comment_div = $($(target).find("a.comment_link"));
-        console.log(target);
         comment_div.parent().parent().parent().append(
             newElement(comment_div.parent().parent()[0]).append(
                 newElement(comment_div.parent()[0]).append(
@@ -124,13 +123,13 @@
                 'href'  : img.src,
                 'class' : "myURL",
                 'target': "_blank",
-                'download': ""}).append("I" + i));
+                'download': ''}).append("I" + i));
         }
         if (imgs.length)
             console.log("Add Img");
     }
     function addButtonInFeed() {
-        var feed_all = $(".fbUserStory");
+        var feed_all = $(".userContentWrapper");
         for (var i=0; i<feed_all.length; ++i) {
             var feed = feed_all[i];
             if ($(feed).find('.myURL').length > 0)
