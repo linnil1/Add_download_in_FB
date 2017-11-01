@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Facebook Add Download
 // @namespace    http://tampermonkey.net/
-// @version      0.6.2
+// @version      0.6.3
 // @description  Add Download buttom in Facebook
 // @author       linnil1
 // @supportURL   None
@@ -230,13 +230,13 @@
                 console.log(img);
                 link = "";
                 // remove emoji
-                for (var i=0; i<img.length; ++i)
-                    if(img[i].src.indexOf("emoji.php") === -1) {
-                        link = img[i].src;
+                for (var j=0; j<img.length; ++j)
+                    if(img[j].src.indexOf("emoji.php") === -1) {
+                        link = img[j].src;
                         break;
                     }
                 if (link === "")
-                    return;
+                    continue;
             }
             else
                 continue;
