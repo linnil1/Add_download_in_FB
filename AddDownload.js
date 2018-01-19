@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Add Download In Facebook
 // @namespace    http://tampermonkey.net/
-// @version      0.8.0
+// @version      0.8.1
 // @description  Add Download buttom in Facebook
 // @author       linnil1
 // @supportURL   None
@@ -11,6 +11,7 @@
 // @include      https://*.facebook.com/*
 // @run-at       document-idle
 // @grant        none
+// @noframes
 //
 // ==/UserScript==
 // thanks        https://greasyfork.org/en/scripts/24295-facebook-video-downloader
@@ -261,9 +262,9 @@
 
     // main function
     var mutationObserver = window.MutationObserver || window.WebKitMutationObserver || window.MozMutationObserver;
-    if(mutationObserver) {
+    if (mutationObserver) {
         var body = document.querySelector('body');
-        if(!body) {
+        if (!body) {
             return;
         }
         var observer = new mutationObserver(addAll);
