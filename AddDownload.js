@@ -1,7 +1,7 @@
 // ==UserScript==
-// @name         Facebook Add Download
+// @name         Add Download In Facebook
 // @namespace    http://tampermonkey.net/
-// @version      0.6.3
+// @version      0.7.0
 // @description  Add Download buttom in Facebook
 // @author       linnil1
 // @supportURL   None
@@ -11,7 +11,6 @@
 // @include      https://*.facebook.com/*
 // @run-at       document-idle
 // @grant        none
-// @require      https://code.jquery.com/jquery-3.2.1.min.js
 //
 // ==/UserScript==
 // thanks        https://greasyfork.org/en/scripts/24295-facebook-video-downloader
@@ -19,17 +18,31 @@
 
 (function() {
     'use strict';
-    function newElement(oldele) {
-        return jQuery("<"+oldele.tagName+">",{class:oldele.className});
+    function newLink (url, className, text) {
+        var a = document.createElement('a');
+        a.setAttribute('href', url);
+        a.setAttribute('class', className);
+        a.setAttribute('target', "_blank");
+        a.setAttribute('download', "");
+        a.innerText = text;
+        return a;
     }
-    function toUI(target, want) {
+
+    function newElement (oldele) {
+        var a = document.createElement(oldele.tagName);
+        a.setAttribute('class', oldele.className);
+        return a;
+    }
+
+    function toUI (target, want) {
         // find comment and copy one with wanted link
-        var comment_div = $($(target).find("a.comment_link"));
-        comment_div.parent().parent().parent().append(
-            newElement(comment_div.parent().parent()[0]).append(
-                newElement(comment_div.parent()[0]).append(
-                   want[0])));
+        var comment_div = target.querySelector("a.comment_link");
+        comment_div.parentElement.parentElement.parentElement.appendChild(
+            newElement(comment_div.parentElement.parentElement).appendChild(
+                newElement(comment_div.parentElement).appendChild(
+                   want)));
     }
+
     function addButtonInTheater() {
         // find if in theater mode
         if (document.location.href.indexOf("theater") === -1)
@@ -38,11 +51,12 @@
         if (screen.find(".stage video").length)
             return;
 
-        console.log("Add theater");
         // Done
         if (screen.find('.myURL_download').length) {
             return;
         }
+        console.log("Add theater");
+
         // wait click for download hash
         if (!screen.find(".myURL_download_click").length) {
            screen.find(".uiButton")[0].click();
@@ -58,35 +72,37 @@
         }
     }
 
-    function addGIF(feed) {
+    function addGIF (feedori) {
+        var feed = feedori.children[0];
         // the most difference between GIF and video is muted. XDDD
-        var nowVideo = $(feed).find('.mtm video');
-        var href;
-        if (!nowVideo.attr('class','myGIF')) {
-            href = $(feed).find('span > a[rel="noopener nofollow"]');
-            if (!href.length)
+        // pause gif to get link
+        var nowVideo = feed.querySelector('.mtm video');
+        if (!nowVideo.classList.contains('myAdd_GIF')) {
+            if (feed.querySelector('span > a[rel="nofollow"]') == null)
                 nowVideo.click(); // pause to get url
-            nowVideo.addClass('myGIF');
+            nowVideo.classList.add('myAdd_GIF');
         }
+
         // this may be not robost
-        href = $(feed).find('span > a[rel="noopener nofollow"]');
-        if (!href.length)
+        var hrefNode = feed.querySelector('span > a[rel="nofollow"]');
+        if (hrefNode == null)
             return ;
-        href = decodeURIComponent(href[0].href).substr(6); // remove http in the front
+        var href;
+        if (hrefNode.href.search("facebook") != -1)
+            href = decodeURIComponent(hrefNode.href).substr(6); // remove http in the front
+        else
+            href = hrefNode.href;
         var httpIndex = href.indexOf("http");
         href = href.substr(httpIndex, href.toLowerCase().indexOf(".gif") + 4 - httpIndex);
+
         // add to feed
         console.log(href);
-        var myButton = jQuery("<a/>", {
-            'href'  : href,
-            'class' : "myURL",
-            'target': "_blank",
-            'download': ""});
-        toUI(feed, myButton.append("GIF"));
+        toUI(feedori, newLink(href, "myAdd", "GIF"));
         nowVideo.click(); // unpause
         console.log("Add GIF");
         return ;
     }
+
     function addVideo(feed) {
         // find url of video for later used (addDownload)
         var url;
@@ -110,42 +126,38 @@
         console.log("Add Video");
     }
 
-    function addImg(feed) {
-        if ($(feed).find('.mtm img').length === 0)
+    function addImg (feedori) {
+        var feed = feedori.children[0];
+        if (feed.querySelector('.mtm img') == null)
             return ;
         // There may be many image in o feed
-        var imgs = $(feed).find('.mtm div > img');
+        var imgs = feed.querySelectorAll('.mtm div > img');
         for (var i=0; i<imgs.length; ++i) {
             var img = imgs[i];
             console.log(img);
             // add to feed
-            toUI(feed, jQuery("<a/>", {
-                'href'  : img.src,
-                'class' : "myURL",
-                'target': "_blank",
-                'download': ''}).append("I" + i));
+            toUI(feedori, newLink(img.src, "myAdd", "I" + i));
         }
         if (imgs.length)
             console.log("Add Img");
     }
+
     function addButtonInFeed() {
-        var feed_all = $(".userContentWrapper");
-        for (var i=0; i<feed_all.length; ++i) {
-            var feed = feed_all[i];
-            if ($(feed).find('.myURL').length > 0)
-                continue;
+        var feed_all = document.querySelectorAll(".userContentWrapper");
+        feed_all.forEach( function (feed) {
+            if (feed.querySelector('.myAdd') != null)
+                return ;
             console.log("Add Feed");
             // there may not have video and image together?
-            if ($(feed).find('.mtm video').length) {
-                if ($(feed).find('.mtm video[muted]').length)
-                    addVideo(feed);
-                else
+            if (feed.querySelector('.mtm video') != null) {
+                if (feed.querySelector('.mtm video[muted]') == null)
                     addGIF(feed);
+                //else addVideo(feed);
             }
             else {
                 addImg(feed);
             }
-        }
+        });
     }
 
     // this code is modified from https://greasyfork.org/en/scripts/24295-facebook-video-downloader
@@ -253,10 +265,10 @@
     }
 
     function addAll(){
-        addButtonInTheater();
+        // addButtonInTheater();
         addButtonInFeed();
-        addButtonInComment();
-        addDownload();
+        // addButtonInComment();
+        // addDownload();
     }
 
     // main function
