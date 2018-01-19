@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Add Download In Facebook
 // @namespace    http://tampermonkey.net/
-// @version      0.7.0
+// @version      0.7.1
 // @description  Add Download buttom in Facebook
 // @author       linnil1
 // @supportURL   None
@@ -72,11 +72,7 @@
         }
     }
 
-    function addGIF (feedori) {
-        var feed = feedori.children[0];
-        // the most difference between GIF and video is muted. XDDD
-        // pause gif to get link
-        var nowVideo = feed.querySelector('.mtm video');
+    function addGIF_general (feed, nowVideo) {
         if (!nowVideo.classList.contains('myAdd_GIF')) {
             if (feed.querySelector('span > a[rel="nofollow"]') == null)
                 nowVideo.click(); // pause to get url
@@ -94,6 +90,15 @@
             href = hrefNode.href;
         var httpIndex = href.indexOf("http");
         href = href.substr(httpIndex, href.toLowerCase().indexOf(".gif") + 4 - httpIndex);
+        return href;
+    }
+
+    function addGIF (feedori) {
+        var feed = feedori.children[0];
+        // the most difference between GIF and video is muted. XDDD
+        // pause gif to get link
+        var nowVideo = feed.querySelector('.mtm video');
+        var href  = addGIF_general(feed, nowVideo);
 
         // add to feed
         console.log(href);
@@ -142,7 +147,7 @@
             console.log("Add Img");
     }
 
-    function addButtonInFeed() {
+    function addButtonInFeed () {
         var feed_all = document.querySelectorAll(".userContentWrapper");
         feed_all.forEach( function (feed) {
             if (feed.querySelector('.myAdd') != null)
@@ -209,38 +214,21 @@
             console.log("Download video src OK");
         }
     }
-    function addButtonInComment() {
-        var coms = $(".UFIComment");
-        for (var i=0; i<coms.length; ++i) {
-            var com = $(coms[i]);
-            if (com.find(".myURL_comment").length)
-                continue;
+
+    function addButtonInComment () {
+        var coms = document.querySelectorAll(".UFIComment");
+        coms.forEach( function(com) {
+            if (com.querySelector(".myAdd_comment") != null)
+                return;
             var link = "";
-            // gif
-            if (com.find(".UFICommentContent video").length) {
-                var nowVideo = $(com).find('.UFICommentContent video');
-                var href;
-                if (!nowVideo.attr('class','myGIF')) {
-                    href = $(com).find('span > a[rel="noopener nofollow"]');
-                    if (!href.length)
-                        nowVideo.click(); // pause to get url
-                    nowVideo.addClass('myGIF');
-                }
-                // this may be not robost
-                href = $(com).find('span > a[rel="noopener nofollow"]');
-                if (!href.length)
-                    return ;
-                href = decodeURIComponent(href[0].href).substr(6); // remove http in the front
-                var httpIndex = href.indexOf("http");
-                href = href.substr(httpIndex, href.toLowerCase().indexOf(".gif") + 4 - httpIndex);
-                console.log(href);
-                link = href;
+            // gif (video may not in comments)
+            if (com.querySelector(".UFICommentContent video") != null) {
+                var nowVideo = com.querySelector('.UFICommentContent video');
+                link = addGIF_general(com, nowVideo);
             }
             // image
-            else if (com.find(".UFICommentContent img").length) {
-                var img = com.find(".UFICommentContent img");
-                console.log(img);
-                link = "";
+            else if (com.querySelector(".UFICommentContent img") != null) {
+                var img = com.querySelectorAll(".UFICommentContent img");
                 // remove emoji
                 for (var j=0; j<img.length; ++j)
                     if(img[j].src.indexOf("emoji.php") === -1) {
@@ -248,26 +236,22 @@
                         break;
                     }
                 if (link === "")
-                    continue;
+                    return ;
             }
             else
-                continue;
+                return ;
 
-            console.log("Add comment");
-            var but = com.find(".UFIReplyLink");
-            but.parent().append(jQuery('<a/>', {
-                'class': "myURL_comment",
-                'href': link,
-                'target': "_blank",
-                'download': ''}).append("Download")[0]);
+            console.log(link);
+            var but = com.querySelector(".UFIReplyLink");
+            but.parentElement.appendChild(newLink(link, "myAdd_comment", "Download"));
             console.log("Add comment OK");
-        }
+        });
     }
 
     function addAll(){
         // addButtonInTheater();
         addButtonInFeed();
-        // addButtonInComment();
+        addButtonInComment();
         // addDownload();
     }
 
