@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Add Download In Facebook
 // @namespace    http://tampermonkey.net/
-// @version      0.7.3
+// @version      0.8.0
 // @description  Add Download buttom in Facebook
 // @author       linnil1
 // @supportURL   None
@@ -23,7 +23,8 @@
         a.setAttribute('href', url);
         a.setAttribute('class', className);
         a.setAttribute('target', "_blank");
-        a.setAttribute('download', "");
+        if (!/V\d+/g.test(text)) // V0 V1
+            a.setAttribute('download', "");
         a.innerText = text;
         return a;
     }
@@ -43,14 +44,15 @@
                    want)));
     }
 
+    var videoReg = /\w+\/videos\/\d+/;
+
     function addButtonInTheater () {
         // find if in theater mode
-        if (document.location.href.indexOf("theater") === -1)
-            return ;
         var screen = document.querySelector(".fbPhotoSnowliftContainer");
         if (screen === null) // wait
             return ;
-
+        if (document.location.href.indexOf("theater") === -1)
+            return ;
         // how to deal with video
         if (screen.querySelector(".stage video") !== null)
             return;
@@ -128,6 +130,25 @@
             console.log("Add Img");
     }
 
+    function addVideo (feed) {
+        var links = feed.querySelectorAll("*[href]");
+        var ok_links = [], i=0;
+        links.forEach( function(link) {
+            if (videoReg.test(link.href)) {
+                console.log(link.href);
+                var s = videoReg.exec(link.href)[0];
+                if (ok_links.indexOf(s) === -1) {
+                    ok_links.push(s);
+                    console.log(link.href);
+                    toUI(feed, newLink(link.href, "myAdd", "V" + i));
+                    ++i;
+                }
+            }
+        });
+        if (ok_links.length)
+            console.log("Add Video Link");
+    }
+
     function addButtonInFeed () {
         var feed_all = document.querySelectorAll(".userContentWrapper");
         feed_all.forEach( function (feed) {
@@ -138,6 +159,8 @@
             if (feed.querySelector('.mtm video') !== null) {
                 if (feed.querySelector('.mtm video[muted]') === null)
                     addGIF(feed);
+                else
+                    addVideo(feed);
             }
             else
                 addImg(feed);
@@ -171,14 +194,12 @@
         return result;
     }
 
+    // this only work when url is "facebook.com/name/videos/videoID"
     function addDownload() {
-        var feeds = document.querySelectorAll(".userContentWrapper");
-        if (feeds === null || feeds.length !== 1 ||
-            feeds[0].querySelector(".myAdd_video") !== null ||
-            feeds[0].querySelector('.mtm video[muted]') === null)
-            return ;
-        var feed = feeds[0];
-        console.log("Video Added");
+        if (!videoReg.test(document.location.href))
+            return;
+        var feeds = document.querySelectorAll("a.comment_link");
+
         var videosData = getFBVideos();
         for (var i=0; i<videosData.length; ++i) {
             var videoData = videosData[i];
@@ -186,8 +207,15 @@
             var dataurl = videoData.hd_src_no_ratelimit || videoData.hd_src || videoData.sd_src_no_ratelimit || videoData.sd_src;
             if (!dataurl)
                 return;
-            toUI(feed, newLink(dataurl, "myAdd_video", "V" + i));
-            console.log("Download video src OK");
+            feeds.forEach( function(feed) {
+                feed = feed.parentElement.parentElement.parentElement;
+                if (feed.querySelector(".myAdd_video") !== null)
+                    return;
+
+                console.log("Video Added");
+                toUI(feed, newLink(dataurl, "myAdd_video", "Video" + i));
+                console.log("Download video src OK");
+            });
         }
     }
 
