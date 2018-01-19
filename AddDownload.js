@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Add Download In Facebook
 // @namespace    http://tampermonkey.net/
-// @version      0.7.2
+// @version      0.7.3
 // @description  Add Download buttom in Facebook
 // @author       linnil1
 // @supportURL   None
@@ -112,29 +112,6 @@
         return ;
     }
 
-    function addVideo(feed) {
-        // find url of video for later used (addDownload)
-        var url;
-        if ($(feed).find('a[rel="theater"]').length)
-            url = $(feed).find('a[rel="theater"]');
-        else if($(feed).find('a[href*="permalink"]').length )
-            url = $(feed).find('a[href*="permalink"]');
-        else if($(feed).find('a[href*="videos"]').length )
-            url = $(feed).find('a[href*="videos"]');
-        else
-            return;
-        if (!url.length)
-            return;
-        // add to feed
-        console.log(url);
-        var myButton = jQuery("<a/>",
-                              {'href'  : url[0].href,
-                               'class' : "myURL",
-                               'target': "_blank"});
-        toUI(feed, myButton.append("URL"));
-        console.log("Add Video");
-    }
-
     function addImg (feedori) {
         var feed = feedori.children[0];
         if (feed.querySelector('.mtm img') === null)
@@ -161,11 +138,9 @@
             if (feed.querySelector('.mtm video') !== null) {
                 if (feed.querySelector('.mtm video[muted]') === null)
                     addGIF(feed);
-                //else addVideo(feed);
             }
-            else {
+            else
                 addImg(feed);
-            }
         });
     }
 
@@ -173,21 +148,19 @@
     var prefix = 'videoData:[{';
     var suffix = '}],';
 
-    function getFBVideos() {
-        var scripts = document.getElementsByTagName('script');
+    function getFBVideos () {
+        var scripts = document.querySelectorAll('script');
         var result = [];
 
         for (var i = 0; i < scripts.length; ++i) {
             var txt = scripts[i].textContent;
             var pos;
-
             while ((pos = txt.indexOf(prefix)) !== -1) {
                 txt = txt.substr(pos + prefix.length - 1);
                 var endPos = txt.indexOf(suffix);
 
-                if (endPos === -1) {
+                if (endPos === -1)
                     continue;
-                }
 
                 var videoData = txt.substr(0, endPos + 1);
                 // result.push(JSON.parse(videoData));
@@ -199,10 +172,13 @@
     }
 
     function addDownload() {
-        var feed = $(".fbUserStory");
-        if (feed.length !== 1 || $(feed).find('.myURL_video').length > 0)
+        var feeds = document.querySelectorAll(".userContentWrapper");
+        if (feeds === null || feeds.length !== 1 ||
+            feeds[0].querySelector(".myAdd_video") !== null ||
+            feeds[0].querySelector('.mtm video[muted]') === null)
             return ;
-        console.log("One feed with video");
+        var feed = feeds[0];
+        console.log("Video Added");
         var videosData = getFBVideos();
         for (var i=0; i<videosData.length; ++i) {
             var videoData = videosData[i];
@@ -210,11 +186,7 @@
             var dataurl = videoData.hd_src_no_ratelimit || videoData.hd_src || videoData.sd_src_no_ratelimit || videoData.sd_src;
             if (!dataurl)
                 return;
-            toUI(feed, jQuery("<a/>",
-                              {'href'  : dataurl,
-                               'class' : "myURL_video",
-                               'target': "_blank",
-                               'download': ''}).append("V" + i));
+            toUI(feed, newLink(dataurl, "myAdd_video", "V" + i));
             console.log("Download video src OK");
         }
     }
@@ -252,11 +224,11 @@
         });
     }
 
-    function addAll(){
+    function addAll() {
         addButtonInTheater();
         addButtonInFeed();
         addButtonInComment();
-        // addDownload();
+        addDownload();
     }
 
     // main function
