@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Add Download In Facebook
 // @namespace    http://tampermonkey.net/
-// @version      0.7.1
+// @version      0.7.2
 // @description  Add Download buttom in Facebook
 // @author       linnil1
 // @supportURL   None
@@ -43,48 +43,52 @@
                    want)));
     }
 
-    function addButtonInTheater() {
+    function addButtonInTheater () {
         // find if in theater mode
         if (document.location.href.indexOf("theater") === -1)
             return ;
-        var screen = $(".fbPhotoSnowliftContainer");
-        if (screen.find(".stage video").length)
+        var screen = document.querySelector(".fbPhotoSnowliftContainer");
+        if (screen === null) // wait
+            return ;
+
+        // how to deal with video
+        if (screen.querySelector(".stage video") !== null)
+            return;
+        // Done
+        if (screen.querySelector('.myAdd_theater') !== null)
             return;
 
-        // Done
-        if (screen.find('.myURL_download').length) {
-            return;
-        }
         console.log("Add theater");
 
         // wait click for download hash
-        if (!screen.find(".myURL_download_click").length) {
-           screen.find(".uiButton")[0].click();
-           screen.find(".uiButton").addClass("myURL_download_click");
+        var button = screen.querySelector(".uiButton");
+        if (!button.classList.contains("myAdd_download_click")) {
+           button.click();
+           button.classList.add("myAdd_download_click");
         }
         // wait click for download hash
-        else if (screen.find('a[data-action-type="download_photo"]').length) {
-            var url = screen.find('a[data-action-type="download_photo"]');
-            url.addClass('myURL_download');
+        else if (screen.querySelector('a[data-action-type="download_photo"]') !== null) {
+            var url = screen.querySelector('a[data-action-type="download_photo"]');
+            url.classList.add('myAdd_theater');
             toUI(screen, url);
-            screen.find(".uiButton")[0].click();
-            console.log("Add Download Link");
+            button.click();
+            console.log("Add Download Link in theater");
         }
     }
 
     function addGIF_general (feed, nowVideo) {
         if (!nowVideo.classList.contains('myAdd_GIF')) {
-            if (feed.querySelector('span > a[rel="nofollow"]') == null)
+            if (feed.querySelector('span > a[rel="nofollow"]') === null)
                 nowVideo.click(); // pause to get url
             nowVideo.classList.add('myAdd_GIF');
         }
 
         // this may be not robost
         var hrefNode = feed.querySelector('span > a[rel="nofollow"]');
-        if (hrefNode == null)
+        if (hrefNode === null)
             return ;
         var href;
-        if (hrefNode.href.search("facebook") != -1)
+        if (hrefNode.href.search("facebook") !== -1)
             href = decodeURIComponent(hrefNode.href).substr(6); // remove http in the front
         else
             href = hrefNode.href;
@@ -133,7 +137,7 @@
 
     function addImg (feedori) {
         var feed = feedori.children[0];
-        if (feed.querySelector('.mtm img') == null)
+        if (feed.querySelector('.mtm img') === null)
             return ;
         // There may be many image in o feed
         var imgs = feed.querySelectorAll('.mtm div > img');
@@ -150,12 +154,12 @@
     function addButtonInFeed () {
         var feed_all = document.querySelectorAll(".userContentWrapper");
         feed_all.forEach( function (feed) {
-            if (feed.querySelector('.myAdd') != null)
+            if (feed.querySelector('.myAdd') !== null)
                 return ;
             console.log("Add Feed");
             // there may not have video and image together?
-            if (feed.querySelector('.mtm video') != null) {
-                if (feed.querySelector('.mtm video[muted]') == null)
+            if (feed.querySelector('.mtm video') !== null) {
+                if (feed.querySelector('.mtm video[muted]') === null)
                     addGIF(feed);
                 //else addVideo(feed);
             }
@@ -249,7 +253,7 @@
     }
 
     function addAll(){
-        // addButtonInTheater();
+        addButtonInTheater();
         addButtonInFeed();
         addButtonInComment();
         // addDownload();
