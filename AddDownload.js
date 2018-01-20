@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Add Download In Facebook
 // @namespace    http://tampermonkey.net/
-// @version      0.8.2
+// @version      0.8.3
 // @description  Add Download buttom in Facebook
 // @author       linnil1
 // @supportURL   None
@@ -172,6 +172,13 @@
         feed_all.forEach( function (feed) {
             if (feed.querySelector('.myAdd') !== null)
                 return ;
+            // remove sub data of content // like 動態回顧
+            var feedp = feed.parentNode;
+            while (feedp && feedp.parentNode) { // topest element
+                if (feedp.classList.contains("userContentWrapper"))
+                    return ;
+                feedp = feedp.parentNode;
+            }
             console.log("Add Feed");
             // there may not have video and image together?
             if (feed.querySelector('.mtm video') !== null) {
