@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Add Download In Facebook
 // @namespace    http://tampermonkey.net/
-// @version      0.8.1
+// @version      0.8.2
 // @description  Add Download buttom in Facebook
 // @author       linnil1
 // @supportURL   None
@@ -45,7 +45,8 @@
                    want)));
     }
 
-    var videoReg = /\w+\/videos\/\d+/;
+    var videoReg = /\w+\/videos\/\d+/,
+        permalinkReg = /\w+\/permalink\/\d+/;
 
     function addButtonInTheater () {
         // find if in theater mode
@@ -148,6 +149,22 @@
         });
         if (ok_links.length)
             console.log("Add Video Link");
+        else {
+            links.forEach( function(link) {
+                if (permalinkReg.test(link.href)) {
+                    console.log(link.href);
+                    var s = permalinkReg.exec(link.href)[0];
+                    if (ok_links.indexOf(s) === -1) {
+                        ok_links.push(s);
+                        console.log(link.href);
+                        toUI(feed, newLink(link.href, "myAdd", "V" + i));
+                        ++i;
+                    }
+                }
+            });
+            // Must have Permalink ?
+            console.log("Add Permalink Link");
+        }
     }
 
     function addButtonInFeed () {
@@ -195,9 +212,10 @@
         return result;
     }
 
-    // this only work when url is "facebook.com/name/videos/videoID"
+    // this only work when url is "facebook.com/name/videos/videoID" or permalink
     function addDownload() {
-        if (!videoReg.test(document.location.href))
+        if (!videoReg.test(document.location.href) &&
+            !permalinkReg.test(document.location.href))
             return;
         var feeds = document.querySelectorAll("a.comment_link");
 
@@ -205,7 +223,8 @@
         for (var i=0; i<videosData.length; ++i) {
             var videoData = videosData[i];
             console.log(videoData);
-            var dataurl = videoData.hd_src_no_ratelimit || videoData.hd_src || videoData.sd_src_no_ratelimit || videoData.sd_src;
+            var dataurl = videoData.hd_src_no_ratelimit || videoData.hd_src ||
+                          videoData.sd_src_no_ratelimit || videoData.sd_src;
             if (!dataurl)
                 return;
             feeds.forEach( function(feed) {
