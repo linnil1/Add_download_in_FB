@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Add Download In Facebook
 // @namespace    http://tampermonkey.net/
-// @version      0.8.3
+// @version      0.9.0
 // @description  Add Download buttom in Facebook
 // @author       linnil1
 // @supportURL   None
@@ -118,8 +118,10 @@
 
     function addImg (feedori) {
         var feed = feedori.children[0];
-        if (feed.querySelector('.mtm img') === null)
+        if (feed.querySelector('.mtm img') === null) {
+            feedori.classList.add("myAdd_OK");
             return ;
+        }
         // There may be many image in o feed
         var imgs = feed.querySelectorAll('.mtm div > img');
         for (var i=0; i<imgs.length; ++i) {
@@ -169,26 +171,34 @@
 
     function addButtonInFeed () {
         var feed_all = document.querySelectorAll(".userContentWrapper");
-        feed_all.forEach( function (feed) {
-            if (feed.querySelector('.myAdd') !== null)
+        feed_all.forEach( function (feedori) {
+            if (feedori.classList.contains("myAdd_OK"))
+                return ;
+            if (feedori.querySelector('.myAdd') !== null)
                 return ;
             // remove sub data of content // like 動態回顧
-            var feedp = feed.parentNode;
+            var feedp = feedori.parentNode;
             while (feedp && feedp.parentNode) { // topest element
-                if (feedp.classList.contains("userContentWrapper"))
+                if (feedp.classList.contains("userContentWrapper")) {
+                    feedori.classList.add("myAdd_OK");
                     return ;
+                }
                 feedp = feedp.parentNode;
             }
             console.log("Add Feed");
+
+            var feed = feedori.children[0];
             // there may not have video and image together?
             if (feed.querySelector('.mtm video') !== null) {
                 if (feed.querySelector('.mtm video[muted]') === null)
-                    addGIF(feed);
+                    addGIF(feedori);
                 else
-                    addVideo(feed);
+                    addVideo(feedori);
             }
+            else if (feed.querySelector('.mtm img') !== null)
+                addImg(feedori);
             else
-                addImg(feed);
+                feedori.classList.add("myAdd_OK");
         });
     }
 
@@ -249,6 +259,8 @@
     function addButtonInComment () {
         var coms = document.querySelectorAll(".UFIComment");
         coms.forEach( function(com) {
+            if (com.classList.contains("myAdd_OK"))
+                return;
             if (com.querySelector(".myAdd_comment") != null)
                 return;
             var link = "";
@@ -269,8 +281,10 @@
                 if (link === "")
                     return ;
             }
-            else
+            else {
+                com.classList.add("myAdd_OK");
                 return ;
+            }
 
             console.log(link);
             var but = com.querySelector(".UFIReplyLink");
