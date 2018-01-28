@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Add Download In Facebook
 // @namespace    http://tampermonkey.net/
-// @version      0.9.0
+// @version      0.9.1
 // @description  Add Download buttom in Facebook
 // @author       linnil1
 // @supportURL   None
@@ -39,6 +39,8 @@
     function toUI (target, want) {
         // find comment and copy one with wanted link
         var comment_div = target.querySelector("a.comment_link");
+        if (!comment_div)
+            return; // unknown error
         comment_div.parentElement.parentElement.parentElement.appendChild(
             newElement(comment_div.parentElement.parentElement).appendChild(
                 newElement(comment_div.parentElement).appendChild(
