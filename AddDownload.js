@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Add Download In Facebook
 // @namespace    http://tampermonkey.net/
-// @version      0.9.2
+// @version      0.9.3
 // @description  Add Download buttom in Facebook
 // @author       linnil1
 // @supportURL   None
@@ -83,10 +83,12 @@
     }
 
     function addGIF_general (feed) {
-        var href = feed.querySelector("a[data-lynx-mode='async']").href;
+        var hrefNode = feed.querySelector("a[data-lynx-mode='async']");
+        if (hrefNode === null)
+            return "";
+        var href = hrefNode.href;
         if (href.search(".gif") == -1) {
-            console.log("Oh nooo");
-            return ;
+            return "";
         }
         if (href.search("facebook") !== -1) {
             var de_href = decodeURIComponent(href).substr(6); // remove http in the front
@@ -101,14 +103,16 @@
         // the most difference between GIF and video is muted. XDDD
         // pause gif to get link
         var href = addGIF_general(feed);
+        if (href === '')
+            return false;
 
         // add to feed
         console.log(href);
         toUI(feedori, newLink(href, "myAdd", "GIF"));
-        feed.classList.add("myAdd_OK");
+        feedori.classList.add("myAdd_OK");
         nowVideo.click(); // unpause
         console.log("Add GIF");
-        return ;
+        return true;
     }
 
     function addImg (feedori) {
@@ -124,7 +128,7 @@
             console.log(img);
             // add to feed
             toUI(feedori, newLink(img.src, "myAdd", "I" + i));
-            feed.classList.add("myAdd_OK");
+            feedori.classList.add("myAdd_OK");
         }
         if (imgs.length)
             console.log("Add Img");
@@ -188,9 +192,7 @@
             var feed = feedori.children[0];
             // there may not have video and image together?
             if (feed.querySelector('.mtm video') !== null) {
-                if (feed.querySelector('.mtm video[muted]') === null)
-                    addGIF(feedori);
-                else
+                if (!addGIF(feedori))
                     addVideo(feedori);
             }
             else if (feed.querySelector('.mtm img') !== null)
@@ -257,7 +259,7 @@
     function addButtonInComment () {
         var coms = document.querySelectorAll(".UFIComment");
         coms.forEach( function(com) {
-            if (com.classList.contains("myAdd_OK"))
+            if (com.classList.contains("myAdd_comment"))
                 return;
             if (com.querySelector(".myAdd_comment") != null)
                 return;
@@ -280,7 +282,7 @@
                     return ;
             }
             else {
-                com.classList.add("myAdd_OK");
+                com.classList.add("myAdd_comment");
                 return ;
             }
 
