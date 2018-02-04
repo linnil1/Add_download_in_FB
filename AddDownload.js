@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Add Download In Facebook
 // @namespace    http://tampermonkey.net/
-// @version      0.9.1
+// @version      0.9.2
 // @description  Add Download buttom in Facebook
 // @author       linnil1
 // @supportURL   None
@@ -82,24 +82,17 @@
         }
     }
 
-    function addGIF_general (feed, nowVideo) {
-        if (!nowVideo.classList.contains('myAdd_GIF')) {
-            if (feed.querySelector('span > a[rel="nofollow"]') === null)
-                nowVideo.click(); // pause to get url
-            nowVideo.classList.add('myAdd_GIF');
-        }
-
-        // this may be not robost
-        var hrefNode = feed.querySelector('span > a[rel="nofollow"]');
-        if (hrefNode === null)
+    function addGIF_general (feed) {
+        var href = feed.querySelector("a[data-lynx-mode='async']").href;
+        if (href.search(".gif") == -1) {
+            console.log("Oh nooo");
             return ;
-        var href;
-        if (hrefNode.href.search("facebook") !== -1)
-            href = decodeURIComponent(hrefNode.href).substr(6); // remove http in the front
-        else
-            href = hrefNode.href;
-        var httpIndex = href.indexOf("http");
-        href = href.substr(httpIndex, href.toLowerCase().indexOf(".gif") + 4 - httpIndex);
+        }
+        if (href.search("facebook") !== -1) {
+            var de_href = decodeURIComponent(href).substr(6); // remove http in the front
+            var httpIndex = de_href.indexOf("http");
+            href = de_href.substr(httpIndex, de_href.toLowerCase().indexOf(".gif") + 4 - httpIndex);
+        }
         return href;
     }
 
@@ -107,12 +100,12 @@
         var feed = feedori.children[0];
         // the most difference between GIF and video is muted. XDDD
         // pause gif to get link
-        var nowVideo = feed.querySelector('.mtm video');
-        var href  = addGIF_general(feed, nowVideo);
+        var href = addGIF_general(feed);
 
         // add to feed
         console.log(href);
         toUI(feedori, newLink(href, "myAdd", "GIF"));
+        feed.classList.add("myAdd_OK");
         nowVideo.click(); // unpause
         console.log("Add GIF");
         return ;
@@ -131,6 +124,7 @@
             console.log(img);
             // add to feed
             toUI(feedori, newLink(img.src, "myAdd", "I" + i));
+            feed.classList.add("myAdd_OK");
         }
         if (imgs.length)
             console.log("Add Img");
@@ -147,6 +141,7 @@
                     ok_links.push(s);
                     console.log(link.href);
                     toUI(feed, newLink(link.href, "myAdd", "V" + i));
+                    feed.classList.add("myAdd_OK");
                     ++i;
                 }
             }
@@ -162,6 +157,7 @@
                         ok_links.push(s);
                         console.log(link.href);
                         toUI(feed, newLink(link.href, "myAdd", "V" + i));
+                        feed.classList.add("myAdd_OK");
                         ++i;
                     }
                 }
