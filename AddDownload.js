@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Add Download In Facebook
 // @namespace    http://tampermonkey.net/
-// @version      0.9.3
+// @version      0.10.0
 // @description  Add Download buttom in Facebook
 // @author       linnil1
 // @supportURL   None
@@ -19,6 +19,10 @@
 
 (function() {
     'use strict';
+    function mylog(unit, status, text="") {
+        console.log("[myAdd]", unit, status, text);
+    }
+
     function newLink (url, className, text) {
         var a = document.createElement('a');
         a.setAttribute('href', url);
@@ -64,7 +68,7 @@
         if (screen.querySelector('.myAdd_theater') !== null)
             return;
 
-        console.log("Add theater");
+        mylog("Theater", "Init");
 
         // wait click for download hash
         var button = screen.querySelector(".uiButton");
@@ -78,7 +82,7 @@
             url.classList.add('myAdd_theater');
             toUI(screen, url);
             button.click();
-            console.log("Add Download Link in theater");
+            mylog("Theater", "Link", url);
         }
     }
 
@@ -107,11 +111,10 @@
             return false;
 
         // add to feed
-        console.log(href);
+        mylog("GIF", "Link", href);
         toUI(feedori, newLink(href, "myAdd", "GIF"));
         feedori.classList.add("myAdd_OK");
         nowVideo.click(); // unpause
-        console.log("Add GIF");
         return true;
     }
 
@@ -125,13 +128,11 @@
         var imgs = feed.querySelectorAll('.mtm div > img');
         for (var i=0; i<imgs.length; ++i) {
             var img = imgs[i];
-            console.log(img);
+            mylog("Image", "Data", img);
             // add to feed
             toUI(feedori, newLink(img.src, "myAdd", "I" + i));
             feedori.classList.add("myAdd_OK");
         }
-        if (imgs.length)
-            console.log("Add Img");
     }
 
     function addVideo (feed) {
@@ -139,35 +140,31 @@
         var ok_links = [], i=0;
         links.forEach( function(link) {
             if (videoReg.test(link.href)) {
-                console.log(link.href);
                 var s = videoReg.exec(link.href)[0];
                 if (ok_links.indexOf(s) === -1) {
                     ok_links.push(s);
-                    console.log(link.href);
+                    mylog("Video", "Link", link.href);
                     toUI(feed, newLink(link.href, "myAdd", "V" + i));
                     feed.classList.add("myAdd_OK");
                     ++i;
                 }
             }
         });
-        if (ok_links.length)
-            console.log("Add Video Link");
-        else {
+        if (!ok_links.length) {
+            // Must have Permalink ?
+            mylog("Video", "NotFound", "Use permalink instead");
             links.forEach( function(link) {
                 if (permalinkReg.test(link.href)) {
-                    console.log(link.href);
                     var s = permalinkReg.exec(link.href)[0];
                     if (ok_links.indexOf(s) === -1) {
                         ok_links.push(s);
-                        console.log(link.href);
+                        mylog("Video", "Link", link.href);
                         toUI(feed, newLink(link.href, "myAdd", "V" + i));
                         feed.classList.add("myAdd_OK");
                         ++i;
                     }
                 }
             });
-            // Must have Permalink ?
-            console.log("Add Permalink Link");
         }
     }
 
@@ -187,7 +184,7 @@
                 }
                 feedp = feedp.parentNode;
             }
-            console.log("Add Feed");
+            mylog("Feed", "Add");
 
             var feed = feedori.children[0];
             // there may not have video and image together?
@@ -239,7 +236,7 @@
         var videosData = getFBVideos();
         for (var i=0; i<videosData.length; ++i) {
             var videoData = videosData[i];
-            console.log(videoData);
+            mylog("video", "Data", videoData);
             var dataurl = videoData.hd_src_no_ratelimit || videoData.hd_src ||
                           videoData.sd_src_no_ratelimit || videoData.sd_src;
             if (!dataurl)
@@ -248,10 +245,8 @@
                 feed = feed.parentElement.parentElement.parentElement;
                 if (feed.querySelector(".myAdd_video") !== null)
                     return;
-
-                console.log("Video Added");
                 toUI(feed, newLink(dataurl, "myAdd_video", "Video" + i));
-                console.log("Download video src OK");
+                mylog("video", "OK");
             });
         }
     }
@@ -286,10 +281,9 @@
                 return ;
             }
 
-            console.log(link);
+            mylog("comment", "Link", link);
             var but = com.querySelector(".UFIReplyLink");
             but.parentElement.appendChild(newLink(link, "myAdd_comment", "Download"));
-            console.log("Add comment OK");
         });
     }
 
