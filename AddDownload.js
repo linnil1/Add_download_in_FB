@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Add Download In Facebook
 // @namespace    http://tampermonkey.net/
-// @version      0.10.0
+// @version      0.10.1
 // @description  Add Download buttom in Facebook
 // @author       linnil1
 // @supportURL   None
@@ -19,6 +19,13 @@
 
 (function() {
     'use strict';
+
+    var str_OK = "myAdd_OK";
+    function checkOK (node) { return node.classList.contains(str_OK); }
+    function setOK   (node) { node.classList.add(str_OK); }
+    function setNA   (node) { node.classList.add(str_OK); }
+
+
     function mylog(unit, status, text="") {
         console.log("[myAdd]", unit, status, text);
     }
@@ -107,23 +114,22 @@
         // the most difference between GIF and video is muted. XDDD
         // pause gif to get link
         var href = addGIF_general(feed);
-        if (href === '')
+        if (href === '') {
+            setNA(feedori);
             return false;
+        }
 
         // add to feed
         mylog("GIF", "Link", href);
         toUI(feedori, newLink(href, "myAdd", "GIF"));
-        feedori.classList.add("myAdd_OK");
+        setOK(feedori);
         nowVideo.click(); // unpause
         return true;
     }
 
     function addImg (feedori) {
         var feed = feedori.children[0];
-        if (feed.querySelector('.mtm img') === null) {
-            feedori.classList.add("myAdd_OK");
-            return ;
-        }
+
         // There may be many image in o feed
         var imgs = feed.querySelectorAll('.mtm div > img');
         for (var i=0; i<imgs.length; ++i) {
@@ -131,7 +137,7 @@
             mylog("Image", "Data", img);
             // add to feed
             toUI(feedori, newLink(img.src, "myAdd", "I" + i));
-            feedori.classList.add("myAdd_OK");
+            setOK(feedori);
         }
     }
 
@@ -145,7 +151,7 @@
                     ok_links.push(s);
                     mylog("Video", "Link", link.href);
                     toUI(feed, newLink(link.href, "myAdd", "V" + i));
-                    feed.classList.add("myAdd_OK");
+                    setOK(feed);
                     ++i;
                 }
             }
@@ -160,29 +166,34 @@
                         ok_links.push(s);
                         mylog("Video", "Link", link.href);
                         toUI(feed, newLink(link.href, "myAdd", "V" + i));
-                        feed.classList.add("myAdd_OK");
+                        setOK(feed);
                         ++i;
                     }
                 }
             });
         }
+        if (!ok_links.length)
+            setNA(feed);
     }
 
     function addButtonInFeed () {
         var feed_all = document.querySelectorAll(".userContentWrapper");
         feed_all.forEach( function (feedori) {
-            if (feedori.classList.contains("myAdd_OK"))
+            if (checkOK(feedori))
                 return ;
-            if (feedori.querySelector('.myAdd') !== null)
-                return ;
+            // if (feedori.querySelector('.myAdd') !== null)
+            //     return ;
             // remove sub data of content // like 動態回顧
-            var feedp = feedori.parentNode;
-            while (feedp && feedp.parentNode) { // topest element
-                if (feedp.classList.contains("userContentWrapper")) {
-                    feedori.classList.add("myAdd_OK");
-                    return ;
+            if (!feedori.classList.contains("myAdd_nosub")) {
+                var feedp = feedori.parentNode;
+                while (feedp && feedp.parentNode) { // topest element
+                    if (feedp.classList.contains("userContentWrapper")) {
+                        setNA(feedori);
+                        return ;
+                    }
+                    feedp = feedp.parentNode;
                 }
-                feedp = feedp.parentNode;
+                feedori.classList.add("myAdd_nosub");
             }
             mylog("Feed", "Add");
 
@@ -195,7 +206,7 @@
             else if (feed.querySelector('.mtm img') !== null)
                 addImg(feedori);
             else
-                feedori.classList.add("myAdd_OK");
+                setNA(feedori);
         });
     }
 
@@ -254,10 +265,10 @@
     function addButtonInComment () {
         var coms = document.querySelectorAll(".UFIComment");
         coms.forEach( function(com) {
-            if (com.classList.contains("myAdd_comment"))
+            if (checkOK(com))
                 return;
-            if (com.querySelector(".myAdd_comment") != null)
-                return;
+            // if (com.querySelector(".myAdd_comment") != null)
+            //     return;
             var link = "";
             // gif (video may not in comments)
             if (com.querySelector(".UFICommentContent video") != null) {
@@ -273,17 +284,20 @@
                         link = img[j].src;
                         break;
                     }
-                if (link === "")
+                if (link === "") {
+                    setNA(com);
                     return ;
+                }
             }
             else {
-                com.classList.add("myAdd_comment");
+                setNA(com);
                 return ;
             }
 
             mylog("comment", "Link", link);
             var but = com.querySelector(".UFIReplyLink");
             but.parentElement.appendChild(newLink(link, "myAdd_comment", "Download"));
+            setOK(com);
         });
     }
 
